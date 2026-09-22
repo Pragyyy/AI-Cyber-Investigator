@@ -1,0 +1,60 @@
+timestamp,username,source_ip,destination_ip,destination_port,event_type,action,status,hostname,process,command_line,file_hash,message
+2026-09-14 03:12:40,bob,203.0.113.77,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon from previously unseen source
+2026-09-14 03:14:05,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c whoami /all,,Spawned whoami.exe
+2026-09-14 03:15:20,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c net user,,Spawned net.exe
+2026-09-14 03:16:33,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c ipconfig /all,,Spawned ipconfig.exe
+2026-09-14 08:37:19,alice,10.0.1.21,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:37:41,alice,10.0.1.21,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:49:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 08:52:14,carol,10.0.1.23,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:52:42,carol,10.0.1.23,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:55:51,dave,10.0.1.24,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:56:10,dave,10.0.1.24,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:56:19,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:56:38,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 09:05:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 09:10:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 09:17:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,teams.exe,,,teams.exe started
+2026-09-14 09:18:38,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:23:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 09:31:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 09:35:10,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:45:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,chrome.exe,,,chrome.exe started
+2026-09-14 09:49:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,outlook.exe,,,outlook.exe started
+2026-09-14 09:53:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 09:56:42,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:58:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 09:58:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 10:03:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,winword.exe,,,winword.exe started
+2026-09-14 10:14:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 10:17:41,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:17:42,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:21:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,chrome.exe,,,chrome.exe started
+2026-09-14 10:31:10,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:31:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,chrome.exe,,,chrome.exe started
+2026-09-14 10:32:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,teams.exe,,,teams.exe started
+2026-09-14 10:39:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,teams.exe,,,teams.exe started
+2026-09-14 10:40:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 10:52:10,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:58:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 11:03:42,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:15:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 11:21:10,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:22:41,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:32:42,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:36:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 11:39:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 11:39:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 11:46:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 11:57:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,outlook.exe,,,outlook.exe started
+2026-09-14 12:07:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,chrome.exe,,,chrome.exe started
+2026-09-14 12:10:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 12:17:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,teams.exe,,,teams.exe started
+2026-09-14 12:24:10,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 12:30:41,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 12:37:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 12:47:38,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:01:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 13:06:42,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 13:10:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 13:33:38,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,chrome.exe,,,chrome.exe started

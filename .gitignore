@@ -1,0 +1,25 @@
+# Secrets - never commit
+.env
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated at runtime
+data/*.db
+data/chroma_db/
+reports/
+*.pdf
+
+# Frontend (Phase 8)
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

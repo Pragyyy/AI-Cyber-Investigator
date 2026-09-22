@@ -1,0 +1,70 @@
+{
+  "normal_activity.csv": {
+    "description": "Ordinary staff activity plus a legitimate admin PowerShell command.",
+    "expected_incidents": []
+  },
+  "brute_force.csv": {
+    "description": "30 failed logins from one IP against one account; no success.",
+    "expected_incidents": [
+      {
+        "type": "brute_force",
+        "source_ip": "192.168.1.77",
+        "user": "svc_backup",
+        "host": "SRV-FILE01"
+      }
+    ],
+    "expected_mitre": [
+      "T1110"
+    ]
+  },
+  "suspicious_powershell.csv": {
+    "description": "Word spawns encoded / download-cradle PowerShell, then an external connection.",
+    "expected_incidents": [
+      {
+        "type": "suspicious_powershell",
+        "user": "carol",
+        "host": "WS-CAROL"
+      }
+    ],
+    "expected_mitre": [
+      "T1059.001"
+    ]
+  },
+  "suspicious_auth_endpoint.csv": {
+    "description": "Successful login from an unseen external IP at 03:12, followed by discovery commands.",
+    "expected_incidents": [
+      {
+        "type": "suspicious_authentication",
+        "source_ip": "203.0.113.77",
+        "user": "bob",
+        "host": "SRV-APP01"
+      }
+    ],
+    "expected_mitre": [
+      "T1078",
+      "T1033"
+    ]
+  },
+  "attack_chain.csv": {
+    "description": "Brute force, successful login, encoded PowerShell, discovery, C2-style traffic, dropped executable, scheduled task.",
+    "expected_incidents": [
+      {
+        "type": "attack_chain",
+        "source_ip": "192.168.1.50",
+        "user": "admin",
+        "host": "SRV-APP01"
+      }
+    ],
+    "expected_mitre": [
+      "T1110",
+      "T1059.001",
+      "T1033",
+      "T1071",
+      "T1053.005"
+    ]
+  },
+  "security_logs.csv": {
+    "description": "Combined dataset: normal noise plus all four attack scenarios (same events as security_logs.json).",
+    "expected_incidents": "union of the four attack scenarios above"
+  }
+}

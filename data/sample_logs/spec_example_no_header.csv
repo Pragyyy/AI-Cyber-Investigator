@@ -1,0 +1,5 @@
+12:01,admin,192.168.1.50,server,LOGIN,authentication,FAILED
+12:02,admin,192.168.1.50,server,LOGIN,authentication,FAILED
+12:03,admin,192.168.1.50,server,LOGIN,authentication,FAILED
+12:06,admin,192.168.1.50,server,LOGIN,authentication,SUCCESS
+12:07,admin,192.168.1.50,server,PROCESS,powershell,EXECUTED
