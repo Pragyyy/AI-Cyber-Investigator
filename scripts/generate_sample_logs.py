@@ -238,7 +238,7 @@ MANIFEST = {
         "description": "Brute force, successful login, encoded PowerShell, discovery, C2-style traffic, dropped executable, scheduled task.",
         "expected_incidents": [{"type": "attack_chain", "source_ip": "192.168.1.50",
                                 "user": "admin", "host": SERVER_HOST}],
-        "expected_mitre": ["T1110", "T1059.001", "T1033", "T1071", "T1053.005"],
+        "expected_mitre": ["T1110", "T1059.001", "T1033", "T1071.001", "T1053.005"],
     },
     "security_logs.csv": {
         "description": "Combined dataset: normal noise plus all four attack scenarios (same events as security_logs.json).",

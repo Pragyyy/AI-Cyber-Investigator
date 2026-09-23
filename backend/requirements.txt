@@ -6,3 +6,18 @@ python-multipart>=0.0.9
 python-dotenv>=1.0
 httpx>=0.27        # needed by FastAPI's TestClient
 pytest>=8.0
+
+# Phase 4 - RAG. numpy/scikit-learn are lightweight and always required (used by the
+# tfidf/memory fallback backends). sentence-transformers/chromadb are the project
+# brief's recommended stack but are larger installs (sentence-transformers pulls in
+# PyTorch, ~2GB disk / downloads a ~90MB model on first use). On an 8GB-RAM machine
+# this is fine but budget a few minutes for the first install and first run.
+#
+# Lighter alternative: set RAG_EMBEDDING_BACKEND=tfidf and RAG_VECTOR_BACKEND=memory
+# in your .env to skip sentence-transformers/chromadb entirely - no downloads, and
+# works fully offline. Retrieval quality is a bit lower (keyword-based, not semantic),
+# which is fine for development/testing and still fine for the classroom demo.
+numpy>=1.26
+scikit-learn>=1.3
+sentence-transformers>=2.7
+chromadb>=0.5

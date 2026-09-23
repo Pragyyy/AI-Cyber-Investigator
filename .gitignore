@@ -11,6 +11,7 @@ __pycache__/
 # Generated at runtime
 data/*.db
 data/chroma_db/
+data/rag_index/
 reports/
 *.pdf
 

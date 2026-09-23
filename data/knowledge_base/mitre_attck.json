@@ -1,0 +1,126 @@
+{
+  "source": "MITRE ATT&CK Enterprise Matrix (curated subset, original summaries)",
+  "attribution": "ATT&CK (R) is a trademark of The MITRE Corporation. Technique IDs, names and tactics are from MITRE ATT&CK; descriptions below are original paraphrases written for this project, not copied from attack.mitre.org.",
+  "reference_url_pattern": "https://attack.mitre.org/techniques/{id}/",
+  "techniques": [
+    {
+      "id": "T1110",
+      "name": "Brute Force",
+      "tactic": "Credential Access",
+      "description": "An attacker repeatedly guesses passwords for one or more accounts, often submitting many login attempts in a short time from the same source. A high volume of failed authentication events against the same account or host, especially followed by an eventual successful login, is the classic signature.",
+      "detection_notes": "Look for many failed logins from one source IP within a short window, particularly when followed by a successful login from that same source."
+    },
+    {
+      "id": "T1110.001",
+      "name": "Brute Force: Password Guessing",
+      "tactic": "Credential Access",
+      "description": "A specific form of brute force where an attacker tries a list of likely passwords against one username, rather than trying many usernames. The failed-attempt pattern looks similar to general brute force but is concentrated on a single account.",
+      "detection_notes": "Many failed logins for one specific username from one or a small number of source IPs."
+    },
+    {
+      "id": "T1078",
+      "name": "Valid Accounts",
+      "tactic": "Defense Evasion, Persistence, Privilege Escalation, Initial Access",
+      "description": "An attacker uses a legitimate, valid set of credentials to log in rather than exploiting a vulnerability. This is hard to detect by signature alone; unusual context around an otherwise-valid login (an unfamiliar source IP, an odd hour, a rarely-used account) is often the only clue.",
+      "detection_notes": "A successful login that is valid but occurs from an external or previously unseen source IP, or outside the account's normal hours."
+    },
+    {
+      "id": "T1059.001",
+      "name": "Command and Scripting Interpreter: PowerShell",
+      "tactic": "Execution",
+      "description": "PowerShell is a built-in Windows scripting engine that attackers frequently abuse because it is trusted, flexible, and can run entirely in memory. Malicious use is often marked by encoded or obfuscated commands, execution-policy bypass flags, hidden windows, or PowerShell being spawned by an unexpected parent process such as an Office application.",
+      "detection_notes": "PowerShell command lines containing -EncodedCommand/-enc, -WindowStyle Hidden, -ExecutionPolicy Bypass, or a parent process of winword.exe/excel.exe/outlook.exe."
+    },
+    {
+      "id": "T1027",
+      "name": "Obfuscated Files or Information",
+      "tactic": "Defense Evasion",
+      "description": "An attacker encodes or otherwise disguises commands, scripts, or payloads to make them harder for analysts and security tools to read. Base64-encoded PowerShell command-line arguments are one of the most common examples seen in Windows environments.",
+      "detection_notes": "Long base64-looking strings in a command line, especially passed to an -EncodedCommand style parameter."
+    },
+    {
+      "id": "T1105",
+      "name": "Ingress Tool Transfer",
+      "tactic": "Command and Control",
+      "description": "An attacker downloads additional tools or payloads onto a compromised host from an external location, commonly using built-in utilities like PowerShell's web client, certutil, or bitsadmin so that no new software needs to be installed to do it.",
+      "detection_notes": "Command lines referencing DownloadString, DownloadFile, Invoke-WebRequest, or certutil -urlcache; a network connection to an external host immediately following such a command."
+    },
+    {
+      "id": "T1071.001",
+      "name": "Application Layer Protocol: Web Protocols",
+      "tactic": "Command and Control",
+      "description": "An attacker's malware communicates with an external command-and-control server using ordinary web protocols (HTTP/HTTPS) so the traffic blends in with normal browsing traffic. Repeated connections at very regular intervals to the same external address are a common giveaway, sometimes called beaconing.",
+      "detection_notes": "Outbound connections to an external IP that repeat at near-regular time intervals, particularly from a non-browser process such as powershell.exe."
+    },
+    {
+      "id": "T1571",
+      "name": "Non-Standard Port",
+      "tactic": "Command and Control",
+      "description": "An attacker's command-and-control channel uses a port number that is not the standard port for the protocol being used, which can help the traffic slip past simple port-based security rules. Ports like 4444 (a common default in offensive security tooling) are a well-known red flag in monitored environments.",
+      "detection_notes": "Outbound connections to unusual or historically malware-associated ports such as 4444, 1337, or 6666."
+    },
+    {
+      "id": "T1033",
+      "name": "System Owner/User Discovery",
+      "tactic": "Discovery",
+      "description": "After gaining access, an attacker often runs simple commands to find out which user account they are operating as and what privileges it has, as a first step before deciding what to do next.",
+      "detection_notes": "Execution of whoami, whoami /all, or query user shortly after a login."
+    },
+    {
+      "id": "T1087",
+      "name": "Account Discovery",
+      "tactic": "Discovery",
+      "description": "An attacker enumerates local or domain user and group accounts to understand what accounts exist and which might be worth targeting next, for example to find administrative accounts.",
+      "detection_notes": "Commands such as net user, net group, or net localgroup administrators."
+    },
+    {
+      "id": "T1016",
+      "name": "System Network Configuration Discovery",
+      "tactic": "Discovery",
+      "description": "An attacker inspects the host's network configuration - IP addresses, routes, DNS settings - to understand the network it has landed on and plan lateral movement.",
+      "detection_notes": "Commands such as ipconfig /all, route print, or arp -a."
+    },
+    {
+      "id": "T1082",
+      "name": "System Information Discovery",
+      "tactic": "Discovery",
+      "description": "An attacker gathers basic details about the compromised system, such as the OS version, patch level, and hardware, often to check whether the machine is worth further effort or to select an appropriate exploit or tool.",
+      "detection_notes": "Commands such as systeminfo or nltest run shortly after initial access."
+    },
+    {
+      "id": "T1053.005",
+      "name": "Scheduled Task/Job: Scheduled Task",
+      "tactic": "Execution, Persistence, Privilege Escalation",
+      "description": "An attacker creates a Windows Scheduled Task so that a malicious program runs automatically in the future, for example every time a user logs on, giving them a way back onto the system even after a reboot or logoff.",
+      "detection_notes": "A schtasks /create command, especially one that points to an executable in an unusual location like C:\\\\Users\\\\Public."
+    },
+    {
+      "id": "T1547.001",
+      "name": "Boot or Logon Autostart Execution: Registry Run Keys",
+      "tactic": "Persistence, Privilege Escalation",
+      "description": "An attacker adds an entry to a Windows registry Run key so that a program launches automatically every time a user logs on, similar in effect to a scheduled task but using a different mechanism.",
+      "detection_notes": "A reg add command targeting a ...\\\\Run or \\\\RunOnce registry key."
+    },
+    {
+      "id": "T1136",
+      "name": "Create Account",
+      "tactic": "Persistence",
+      "description": "An attacker creates a new local or domain user account to maintain access to a system, sometimes giving it a name intended to blend in with legitimate service or admin accounts.",
+      "detection_notes": "A net user <name> <password> /add command or equivalent account-creation activity."
+    },
+    {
+      "id": "T1543.003",
+      "name": "Create or Modify System Process: Windows Service",
+      "tactic": "Execution, Persistence, Privilege Escalation",
+      "description": "An attacker creates or modifies a Windows service so that malicious code runs with the elevated privileges services normally have, and often restarts automatically.",
+      "detection_notes": "An sc create command, or a new service pointing to an executable in a non-standard folder."
+    },
+    {
+      "id": "T1112",
+      "name": "Modify Registry",
+      "tactic": "Defense Evasion",
+      "description": "An attacker changes registry values or keys to hide their activity, disable security tooling, or set up persistence, distinct from other techniques mainly in how broad the possible targets in the registry are.",
+      "detection_notes": "reg add or reg delete commands targeting security or startup-related registry paths."
+    }
+  ]
+}

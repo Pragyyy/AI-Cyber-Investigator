@@ -76,6 +76,13 @@ CREATE TABLE IF NOT EXISTS evidence (
     data        TEXT NOT NULL,   -- evidence package as JSON
     PRIMARY KEY (upload_id, incident_id)
 );
+
+CREATE TABLE IF NOT EXISTS threat_intel (
+    upload_id   TEXT NOT NULL REFERENCES uploads(upload_id) ON DELETE CASCADE,
+    incident_id TEXT NOT NULL,
+    data        TEXT NOT NULL,   -- RAG retrieval result as JSON
+    PRIMARY KEY (upload_id, incident_id)
+);
 """
 
 
@@ -224,6 +231,7 @@ def replace_incidents(upload_id: str, incidents: list[dict]) -> None:
     with get_conn() as conn:
         conn.execute("DELETE FROM incidents WHERE upload_id = ?", (upload_id,))
         conn.execute("DELETE FROM evidence WHERE upload_id = ?", (upload_id,))
+        conn.execute("DELETE FROM threat_intel WHERE upload_id = ?", (upload_id,))
         conn.executemany(
             "INSERT INTO incidents VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             [(upload_id, i["incident_id"], i["incident_type"], i["title"], i["severity"],
@@ -281,5 +289,25 @@ def get_evidence(upload_id: str, incident_id: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute(
             "SELECT data FROM evidence WHERE upload_id = ? AND incident_id = ?",
+            (upload_id, incident_id)).fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+# --------------------------------------------------------------------------
+# Threat intelligence / RAG results (Phase 4)
+# --------------------------------------------------------------------------
+def save_threat_intel(upload_id: str, incident_id: str, result: dict) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO threat_intel (upload_id, incident_id, data) VALUES (?,?,?) "
+            "ON CONFLICT(upload_id, incident_id) DO UPDATE SET data = excluded.data",
+            (upload_id, incident_id, json.dumps(result)),
+        )
+
+
+def get_threat_intel(upload_id: str, incident_id: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT data FROM threat_intel WHERE upload_id = ? AND incident_id = ?",
             (upload_id, incident_id)).fetchone()
     return json.loads(row["data"]) if row else None

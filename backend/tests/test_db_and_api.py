@@ -6,6 +6,9 @@ from pathlib import Path
 # Point the app at a throwaway database BEFORE importing it.
 _TMP = tempfile.mkdtemp()
 os.environ["DB_PATH"] = str(Path(_TMP) / "test.db")
+os.environ["RAG_EMBEDDING_BACKEND"] = "tfidf"
+os.environ["RAG_VECTOR_BACKEND"] = "memory"
+os.environ["RAG_PERSIST_DIR"] = str(Path(_TMP) / "rag_index")
 
 from app import db  # noqa: E402
 from app.parser import parse_log_file  # noqa: E402
@@ -155,6 +158,30 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(r3.json(), r.json())
         self.assertEqual(
             self.client.get(f"/api/uploads/{uid}/incidents/INC-999/evidence").status_code, 404)
+
+    def test_rag_status_search_and_threat_intel(self):
+        status = self.client.get("/api/rag/status").json()
+        self.assertTrue(status["built"])  # built automatically on startup (lifespan)
+        results = self.client.get("/api/rag/search", params={"q": "brute force", "k": 3}).json()
+        self.assertLessEqual(len(results), 3)
+
+        data = (SAMPLES / "attack_chain.csv").read_bytes()
+        up = self.client.post("/api/uploads", files={"file": ("ac.csv", data)}).json()
+        uid = up["upload_id"]
+        iid = self.client.get(f"/api/uploads/{uid}/incidents").json()[0]["incident_id"]
+        r = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/threat-intel")
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertGreater(len(body["candidate_techniques"]), 0)
+        r2 = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/threat-intel")
+        self.assertEqual(r.json(), r2.json())  # served from cache
+        self.assertEqual(
+            self.client.get(f"/api/uploads/{uid}/incidents/INC-999/threat-intel").status_code, 404)
+
+    def test_rag_reindex(self):
+        r = self.client.post("/api/rag/reindex")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["chunk_count"] > 0)
 
     def test_root_redirects_to_docs(self):
         r = self.client.get("/", follow_redirects=False)

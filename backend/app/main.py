@@ -16,12 +16,21 @@ from . import db
 from .config import settings
 from .detection import DetectionConfig, run_detection
 from .evidence import build_evidence
+from . import rag as rag_module
+from .rag import rag_config
 from .parser import SUPPORTED_EXTENSIONS, LogParseError, parse_log_file
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    if not rag_module.get_status(rag_config)["built"]:
+        try:
+            rag_module.build_index(rag_config)
+        except (RuntimeError, ValueError) as exc:
+            print(f"[startup] RAG index not built yet: {exc}\n"
+                 f"[startup] Threat-intel endpoints will return 409 until you run "
+                 f"'python scripts/build_rag_index.py' or POST /api/rag/reindex.")
     yield
 
 
@@ -204,3 +213,59 @@ def get_evidence(upload_id: str, incident_id: str, refresh: bool = False):
     evidence = build_evidence(incident, db.get_all_events(upload_id))
     db.save_evidence(upload_id, incident_id, evidence)
     return evidence
+
+
+# --------------------------------------------------------------------------
+# RAG knowledge base (Phase 4)
+# --------------------------------------------------------------------------
+@app.get("/api/rag/status")
+def rag_status():
+    """Whether the knowledge base index has been built, and with which backends."""
+    return rag_module.get_status(rag_config)
+
+
+@app.post("/api/rag/reindex")
+def rag_reindex():
+    """(Re)build the MITRE ATT&CK + guideline knowledge base index. Run this once
+    after setup, and again any time files under data/knowledge_base change."""
+    try:
+        return rag_module.build_index(rag_config)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/rag/search")
+def rag_search(q: str, k: int = Query(5, ge=1, le=20)):
+    """Manual knowledge-base search, mainly for testing the RAG pipeline directly."""
+    try:
+        return rag_module.retrieve(q, k, rag_config)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@app.get("/api/uploads/{upload_id}/incidents/{incident_id}/threat-intel")
+def get_threat_intel(upload_id: str, incident_id: str, refresh: bool = False):
+    """Candidate MITRE ATT&CK techniques and supporting guidance retrieved for this
+    incident's evidence via RAG. These are retrieval candidates, not confirmed
+    mappings - see the response's "note" field. Cached after the first call."""
+    _require_upload(upload_id)
+    incident = db.get_incident(upload_id, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found.")
+
+    if not refresh:
+        cached = db.get_threat_intel(upload_id, incident_id)
+        if cached:
+            return cached
+
+    evidence = db.get_evidence(upload_id, incident_id)
+    if not evidence:
+        evidence = build_evidence(incident, db.get_all_events(upload_id))
+        db.save_evidence(upload_id, incident_id, evidence)
+
+    try:
+        result = rag_module.retrieve_for_incident(incident, evidence, rag_config)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    db.save_threat_intel(upload_id, incident_id, result)
+    return result
