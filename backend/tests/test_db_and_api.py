@@ -58,6 +58,30 @@ class DbTests(unittest.TestCase):
         self.assertEqual(stats["high_severity_incidents"], 4)
         self.assertGreater(stats["suspicious_events"], 60)
 
+    def test_investigation_storage(self):
+        from app.agents import run_investigation
+        from app.rag import retrieve_for_incident, rag_config
+        data = (SAMPLES / "brute_force.csv").read_bytes()
+        u = db.save_upload("bf.csv", parse_log_file(data, "bf.csv"))
+        uid = u["upload_id"]
+        incidents = __import__("app.detection", fromlist=["run_detection"]).run_detection(
+            db.get_all_events(uid))["incidents"]
+        db.replace_incidents(uid, incidents)
+        iid = incidents[0]["incident_id"]
+        from app.evidence import build_evidence
+        ev = build_evidence(incidents[0], db.get_all_events(uid))
+        db.save_evidence(uid, iid, ev)
+        rag_result = retrieve_for_incident(incidents[0], ev, rag_config)
+        db.save_threat_intel(uid, iid, rag_result)
+        self.assertIsNone(db.get_investigation(uid, iid))
+        result = run_investigation(incidents[0], ev, rag_result, graph_backend="sequential")
+        db.save_investigation(uid, iid, result)
+        cached = db.get_investigation(uid, iid)
+        self.assertEqual(cached, result)
+        # re-running detection must clear stale investigations too
+        db.replace_incidents(uid, incidents)
+        self.assertIsNone(db.get_investigation(uid, iid))
+
     def test_evidence_cache_and_rebuild(self):
         from app.evidence import build_evidence
         data = (SAMPLES / "attack_chain.csv").read_bytes()
@@ -177,6 +201,33 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(r.json(), r2.json())  # served from cache
         self.assertEqual(
             self.client.get(f"/api/uploads/{uid}/incidents/INC-999/threat-intel").status_code, 404)
+
+    def test_investigate_endpoint_and_cache(self):
+        data = (SAMPLES / "attack_chain.csv").read_bytes()
+        up = self.client.post("/api/uploads", files={"file": ("ac.csv", data)}).json()
+        uid = up["upload_id"]
+        iid = self.client.get(f"/api/uploads/{uid}/incidents").json()[0]["incident_id"]
+
+        self.assertEqual(
+            self.client.get(f"/api/uploads/{uid}/incidents/{iid}/investigation").status_code, 404)
+
+        r = self.client.post(f"/api/uploads/{uid}/incidents/{iid}/investigate")
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["llm_provider"], "mock")  # no key configured in test env
+        self.assertIsNotNone(body["detection_analysis"])
+        self.assertIsNotNone(body["evidence_summary"])
+        self.assertIsNotNone(body["threat_intel"])
+        self.assertEqual(len(body["trace"]), 3)
+
+        cached = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/investigation")
+        self.assertEqual(cached.json(), body)
+
+        r2 = self.client.post(f"/api/uploads/{uid}/incidents/{iid}/investigate")
+        self.assertEqual(r2.json(), body)  # served from cache, not re-run
+
+        self.assertEqual(
+            self.client.post(f"/api/uploads/{uid}/incidents/INC-999/investigate").status_code, 404)
 
     def test_rag_reindex(self):
         r = self.client.post("/api/rag/reindex")

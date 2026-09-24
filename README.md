@@ -5,7 +5,7 @@ A software-only prototype that takes security logs, detects suspicious activity,
 knowledge with RAG (MITRE ATT&CK and security documents), builds an attack timeline,
 and generates an evidence-based incident report.
 
-> **Status: Phase 4 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base).
+> **Status: Phase 5 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, multi-agent investigation).
 
 > **Safety note:** all data in this repo is simulated. The tool is for defensive
 > analysis. Public IPs come from reserved documentation ranges and the "encoded"
@@ -17,7 +17,7 @@ and generates an evidence-based incident report.
 - [x] Phase 2 - Detection engine and incident creation
 - [x] Phase 3 - Evidence extraction (traceable to original log rows)
 - [x] Phase 4 - RAG knowledge base (MITRE ATT&CK + guidelines) with ChromaDB
-- [ ] Phase 5 - Multi-agent workflow (LangGraph)
+- [x] Phase 5 - Multi-agent workflow (LangGraph): Detection/Analysis, Evidence, Threat Intelligence agents
 - [ ] Phase 6 - Investigation and correlation
 - [ ] Phase 7 - Report generation (PDF)
 - [ ] Phase 8 - React dashboard
@@ -43,7 +43,7 @@ python ..\scripts\generate_sample_logs.py
 # build the RAG knowledge base index (also happens automatically on first startup)
 python ..\scripts\build_rag_index.py
 
-# run the API
+# run the API - works immediately with no LLM key (LLM_PROVIDER=mock by default)
 uvicorn app.main:app --reload
 ```
 
@@ -69,6 +69,8 @@ Run the tests (from `backend/`): `pytest` (or `python -m unittest discover -s te
 | GET | `/api/rag/status` | Whether the knowledge base index is built, and with which backends |
 | POST | `/api/rag/reindex` | (Re)build the knowledge base index |
 | GET | `/api/rag/search?q=...&k=5` | Manual knowledge-base search (for testing the pipeline directly) |
+| POST | `/api/uploads/{id}/incidents/{incident_id}/investigate` | Run the multi-agent workflow for this incident (cached; `?refresh=true` to re-run) |
+| GET | `/api/uploads/{id}/incidents/{incident_id}/investigation` | Fetch a previously-run investigation without re-running it |
 | GET | `/api/uploads/{id}/incidents/{incident_id}/threat-intel` | Candidate MITRE techniques + guidance for an incident (cached; `?refresh=true` to rebuild) |
 | GET | `/api/samples` | List bundled sample datasets |
 | POST | `/api/samples/{name}/load` | Load a bundled sample dataset |
@@ -152,6 +154,53 @@ candidate against the specific evidence is the Threat Intelligence agent's job
 (Phase 5), consistent with the brief's requirement not to present unsupported
 techniques as fact.
 
+## Multi-agent investigation (Phase 5)
+
+Three specialized agents run in sequence, each with its own role, its own prompt, and
+its own LLM call - not one big prompt doing everything:
+
+1. **Detection/Analysis agent** - reads the rule engine's output (Phase 2) and writes a
+   short headline, reasoning, and initial hypothesis.
+2. **Evidence agent** - reads the extracted evidence (Phase 3) and organizes it into a
+   narrative, citing evidence IDs (EV-xxx) inline, and picks out the 3-6 most important
+   items.
+3. **Threat Intelligence agent** - reads the RAG candidate techniques (Phase 4) *plus*
+   the first two agents' output, and decides, for each candidate, whether the evidence
+   actually supports it (verdict `supported` / `potential` / `weak`, with a
+   justification citing specific evidence). It's expected and correct for it to reject
+   weak candidates rather than assign every technique RAG retrieved - this is what the
+   project brief's "should not blindly assign techniques" requirement means in
+   practice.
+
+Agent 3 genuinely depends on Agents 1 and 2's output (their hypothesis and prioritized
+evidence are part of its prompt), so this is a real information handoff through shared
+graph state, not three independent calls run back-to-back for appearances.
+
+**Works with no API key.** `LLM_PROVIDER=mock` (the default) uses a deterministic,
+data-only fallback for every agent, so the whole pipeline - including the tests - runs
+with zero setup and zero cost. Every agent's output is tagged `"generated_by": "llm"`
+or `"fallback"` in the response, so it's always clear which agents used real reasoning.
+The same fallback also kicks in automatically if a real provider is configured but a
+call fails (bad key, network error, rate limit) - a single agent's hiccup never crashes
+the investigation.
+
+**To use a real model**, set in `.env`:
+```
+LLM_PROVIDER=anthropic          # or: openai_compatible
+LLM_MODEL=claude-haiku-4-5-20251001
+LLM_API_KEY=sk-...
+```
+`openai_compatible` works with any OpenAI-style `/chat/completions` endpoint - useful
+free-tier options include [Groq](https://console.groq.com) (fast, generous free tier)
+and [OpenRouter](https://openrouter.ai). Set `LLM_BASE_URL` accordingly, e.g.
+`https://api.groq.com/openai/v1`.
+
+**Orchestration** is [LangGraph](https://github.com/langchain-ai/langgraph) by default
+(`AGENT_GRAPH_BACKEND=langgraph`), with a dependency-light `sequential` fallback that
+runs the identical node logic without needing the package installed - this is what the
+automated test suite uses, and it's why the agent logic itself is fully tested even in
+environments without `langgraph`.
+
 ## Sample datasets (`data/sample_logs/`)
 
 | File | Scenario |
@@ -172,6 +221,8 @@ backend/app/     FastAPI app: config, parser, db, main
 backend/app/detection/  Rules, correlation, thresholds
 backend/app/evidence/   Evidence extraction, indicators, related events
 backend/app/rag/        Chunking, embeddings, vector store, retrieval pipeline
+backend/app/llm/        Pluggable LLM provider (mock, Anthropic, OpenAI-compatible)
+backend/app/agents/     Multi-agent graph: state, prompts, fallback, nodes, LangGraph/sequential runner
 data/knowledge_base/    MITRE ATT&CK subset + guideline docs (RAG source content)
 backend/tests/   Unit tests
 data/sample_logs Simulated datasets + manifest
@@ -190,12 +241,19 @@ docs/            Design notes and screenshots (later)
 - RAG retrieval quality depends on the embedding backend: the default
   `sentence-transformers` mode retrieves by meaning; the lightweight `tfidf` fallback
   retrieves by shared vocabulary and is noticeably weaker on paraphrased queries.
-- Candidate MITRE techniques from RAG are retrieval suggestions, not verified mappings,
-  until the Threat Intelligence agent (Phase 5) validates them against the evidence.
+- Candidate MITRE techniques from RAG are retrieval suggestions; the Threat Intelligence
+  agent validates or rejects them, but even a validated mapping is the model's judgment,
+  not a guarantee.
 - No live threat-intelligence lookups (IP/hash reputation) - only the local knowledge
   base.
-- LLM-generated wording (from Phase 5 onward) will vary between runs even when the
-  underlying evidence and detections are identical.
+- LLM-generated wording will vary between runs (and between providers/models) even when
+  the underlying evidence and detections are identical. Everything the wording is based
+  on - the detections, evidence, and candidate techniques - is deterministic; only the
+  prose describing it varies.
+- The default `mock` LLM provider produces clearly-labeled, deterministic, data-only
+  text rather than genuine reasoning - useful for development, testing, and demoing
+  without cost, but the analytical quality of the write-up depends on switching to a
+  real model.
 
 ## License
 

@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS threat_intel (
     data        TEXT NOT NULL,   -- RAG retrieval result as JSON
     PRIMARY KEY (upload_id, incident_id)
 );
+
+CREATE TABLE IF NOT EXISTS investigations (
+    upload_id   TEXT NOT NULL REFERENCES uploads(upload_id) ON DELETE CASCADE,
+    incident_id TEXT NOT NULL,
+    data        TEXT NOT NULL,   -- combined multi-agent result as JSON
+    PRIMARY KEY (upload_id, incident_id)
+);
 """
 
 
@@ -232,6 +239,7 @@ def replace_incidents(upload_id: str, incidents: list[dict]) -> None:
         conn.execute("DELETE FROM incidents WHERE upload_id = ?", (upload_id,))
         conn.execute("DELETE FROM evidence WHERE upload_id = ?", (upload_id,))
         conn.execute("DELETE FROM threat_intel WHERE upload_id = ?", (upload_id,))
+        conn.execute("DELETE FROM investigations WHERE upload_id = ?", (upload_id,))
         conn.executemany(
             "INSERT INTO incidents VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             [(upload_id, i["incident_id"], i["incident_type"], i["title"], i["severity"],
@@ -309,5 +317,25 @@ def get_threat_intel(upload_id: str, incident_id: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute(
             "SELECT data FROM threat_intel WHERE upload_id = ? AND incident_id = ?",
+            (upload_id, incident_id)).fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+# --------------------------------------------------------------------------
+# Multi-agent investigation results (Phase 5)
+# --------------------------------------------------------------------------
+def save_investigation(upload_id: str, incident_id: str, result: dict) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO investigations (upload_id, incident_id, data) VALUES (?,?,?) "
+            "ON CONFLICT(upload_id, incident_id) DO UPDATE SET data = excluded.data",
+            (upload_id, incident_id, json.dumps(result)),
+        )
+
+
+def get_investigation(upload_id: str, incident_id: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT data FROM investigations WHERE upload_id = ? AND incident_id = ?",
             (upload_id, incident_id)).fetchone()
     return json.loads(row["data"]) if row else None

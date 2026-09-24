@@ -1,0 +1,9 @@
+{
+  "embedding_backend": "sentence_transformers",
+  "vector_backend": "chroma",
+  "chunk_count": 32,
+  "technique_count": 17,
+  "guideline_chunk_count": 15,
+  "built_at": "2026-09-23T16:47:47Z",
+  "build_seconds": 85.36
+}

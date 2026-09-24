@@ -18,6 +18,7 @@ from .detection import DetectionConfig, run_detection
 from .evidence import build_evidence
 from . import rag as rag_module
 from .rag import rag_config
+from .agents import run_investigation
 from .parser import SUPPORTED_EXTENSIONS, LogParseError, parse_log_file
 
 
@@ -268,4 +269,56 @@ def get_threat_intel(upload_id: str, incident_id: str, refresh: bool = False):
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     db.save_threat_intel(upload_id, incident_id, result)
+    return result
+
+
+# --------------------------------------------------------------------------
+# Multi-agent investigation (Phase 5): Detection/Analysis -> Evidence -> Threat Intel
+# --------------------------------------------------------------------------
+@app.post("/api/uploads/{upload_id}/incidents/{incident_id}/investigate")
+def investigate(upload_id: str, incident_id: str, refresh: bool = False):
+    """Run the multi-agent workflow for this incident and return the combined result.
+    Cached after the first call; pass ?refresh=true to re-run it (e.g. after changing
+    LLM_PROVIDER). Each agent's output is tagged with "generated_by": "llm" if a real
+    model produced it, or "fallback" if the deterministic stand-in was used (no
+    provider configured, or the live call failed)."""
+    _require_upload(upload_id)
+    incident = db.get_incident(upload_id, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found.")
+
+    if not refresh:
+        cached = db.get_investigation(upload_id, incident_id)
+        if cached:
+            return cached
+
+    evidence = db.get_evidence(upload_id, incident_id)
+    if not evidence:
+        evidence = build_evidence(incident, db.get_all_events(upload_id))
+        db.save_evidence(upload_id, incident_id, evidence)
+
+    rag_result = db.get_threat_intel(upload_id, incident_id)
+    if not rag_result:
+        try:
+            rag_result = rag_module.retrieve_for_incident(incident, evidence, rag_config)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
+        db.save_threat_intel(upload_id, incident_id, rag_result)
+
+    result = run_investigation(incident, evidence, rag_result)
+    db.save_investigation(upload_id, incident_id, result)
+    return result
+
+
+@app.get("/api/uploads/{upload_id}/incidents/{incident_id}/investigation")
+def get_investigation(upload_id: str, incident_id: str):
+    """Fetch a previously-run investigation without re-running it. Returns 404 if
+    /investigate hasn't been called for this incident yet."""
+    _require_upload(upload_id)
+    if not db.get_incident(upload_id, incident_id):
+        raise HTTPException(status_code=404, detail="Incident not found.")
+    result = db.get_investigation(upload_id, incident_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="No investigation has been run for "
+                            "this incident yet. POST to /investigate first.")
     return result
