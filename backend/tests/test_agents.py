@@ -17,9 +17,11 @@ os.environ["RAG_PERSIST_DIR"] = _RAG_TMP
 
 from app.agents import run_investigation  # noqa: E402
 from app.agents.fallback import (fallback_detection_analysis, fallback_evidence_summary,
-                                 fallback_threat_intel)  # noqa: E402
+                                 fallback_investigation, fallback_threat_intel)  # noqa: E402
+from app.agents.timeline import build_timeline  # noqa: E402
 from app.agents.graph import LangGraphRunner, SequentialRunner, get_runner_safe  # noqa: E402
-from app.agents.nodes import node_detection, node_evidence, node_threat_intel  # noqa: E402
+from app.agents.nodes import (node_detection, node_evidence, node_investigation,
+                             node_threat_intel)  # noqa: E402
 from app.detection import run_detection  # noqa: E402
 from app.evidence import build_evidence  # noqa: E402
 from app.llm import get_provider
@@ -73,6 +75,56 @@ class FallbackBuilderTests(unittest.TestCase):
         self.assertEqual(fallback_threat_intel({"candidate_techniques": []}), [])
 
 
+class InvestigationFallbackTests(unittest.TestCase):
+    """fallback_investigation must stay grounded in the timeline/threat_intel given -
+    no invented attacker actions, hosts, or techniques."""
+
+    def test_narrative_mentions_every_phase(self):
+        incident, evidence = load_incident("attack_chain.csv")
+        build_index(rag_config)
+        rag_result = retrieve_for_incident(incident, evidence, rag_config)
+        threat_intel = {"techniques": fallback_threat_intel(rag_result)}
+        timeline = build_timeline(incident, threat_intel)
+        result = fallback_investigation(incident, timeline, threat_intel)
+        for phase in timeline:
+            self.assertIn(phase["phase"], result["attack_sequence_narrative"])
+
+    def test_affected_scope_uses_only_incident_facts(self):
+        incident, _ = load_incident("brute_force.csv")
+        timeline = build_timeline(incident)
+        result = fallback_investigation(incident, timeline, {"techniques": []})
+        self.assertIn(incident["usernames"][0], result["affected_scope"])
+        self.assertIn(incident["hostnames"][0], result["affected_scope"])
+
+    def test_priority_mirrors_incident_severity(self):
+        incident, _ = load_incident("attack_chain.csv")  # CRITICAL
+        timeline = build_timeline(incident)
+        result = fallback_investigation(incident, timeline, {"techniques": []})
+        self.assertEqual(result["recommended_priority"], "critical")
+
+    def test_weak_candidates_surface_as_uncertainty(self):
+        incident, evidence = load_incident("attack_chain.csv")
+        build_index(rag_config)
+        rag_result = retrieve_for_incident(incident, evidence, rag_config)
+        threat_intel = {"techniques": fallback_threat_intel(rag_result)}
+        timeline = build_timeline(incident, threat_intel)
+        weak_ids = [t["technique_id"] for t in threat_intel["techniques"]
+                   if t["verdict"] in ("potential", "weak")]
+        result = fallback_investigation(incident, timeline, threat_intel)
+        if weak_ids:
+            self.assertIn("Not fully confirmed", result["gaps_and_uncertainty"])
+            self.assertTrue(any(tid in result["gaps_and_uncertainty"] for tid in weak_ids))
+
+    def test_no_uncertainty_when_nothing_notable(self):
+        incident, _ = load_incident("brute_force.csv")
+        timeline = build_timeline(incident)  # single phase, no gaps possible
+        clean_techniques = {"techniques": [
+            {"technique_id": "T1110", "verdict": "supported", "evidence_ids": []},
+        ]}
+        result = fallback_investigation(incident, timeline, clean_techniques)
+        self.assertIn("No significant gaps", result["gaps_and_uncertainty"])
+
+
 class NodeTests(unittest.TestCase):
     """Each node is tested directly against the MockProvider (no fallback lambda
     override needed beyond what the node builds itself)."""
@@ -120,12 +172,55 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(updates["trace"][-1]["generated_by"], "fallback")
 
 
+class InvestigationNodeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        build_index(rag_config)
+        cls.incident, cls.evidence = load_incident("attack_chain.csv")
+        cls.rag_result = retrieve_for_incident(cls.incident, cls.evidence, rag_config)
+
+    def _upstream_state(self):
+        return {
+            "incident": self.incident, "evidence": self.evidence,
+            "rag_result": self.rag_result,
+            "detection_analysis": fallback_detection_analysis(self.incident),
+            "evidence_summary": fallback_evidence_summary(self.evidence),
+            "threat_intel": {"techniques": fallback_threat_intel(self.rag_result)},
+        }
+
+    def test_requires_upstream_agent_outputs(self):
+        updates = node_investigation(self._upstream_state(), MOCK)
+        self.assertIn("attack_sequence_narrative", updates["investigation"])
+        self.assertIn("timeline", updates)
+        self.assertEqual(len(updates["timeline"]), len(self.incident["detections"]))
+        self.assertEqual(updates["trace"][-1]["agent"], "investigation")
+
+    def test_timeline_uses_the_actual_threat_intel_passed_in(self):
+        """The timeline built inside the node must use the SAME threat_intel from
+        state (for tactic-based phase labels), not rebuild it independently."""
+        state = self._upstream_state()
+        updates = node_investigation(state, MOCK)
+        direct_timeline = build_timeline(self.incident, state["threat_intel"])
+        self.assertEqual(updates["timeline"], direct_timeline)
+
+
 class _EchoRealProvider:
     """A tiny stand-in that simulates a "real" LLM by returning valid JSON that is
-    NOT identical to the fallback text, so nodes correctly tag it "llm"."""
+    NOT identical to the fallback text, so nodes correctly tag it "llm". Dispatch is
+    ordered most-specific-first: INVESTIGATION_SYSTEM also contains the substring
+    "narrative" (inside "attack_sequence_narrative"), so checking for that generic
+    Evidence-agent marker first would misroute the Investigation agent's calls too."""
     name = "echo_test_provider"
 
     def complete(self, system, user, *, max_tokens=1024, temperature=0.2, mock_response=None):
+        if "attack_sequence_narrative" in system:
+            return json.dumps({
+                "attack_sequence_narrative": "LLM-GENERATED SEQUENCE",
+                "affected_scope": "LLM-GENERATED SCOPE",
+                "investigation_summary": "LLM-GENERATED SUMMARY",
+                "gaps_and_uncertainty": "LLM-GENERATED GAPS",
+                "recommended_priority": "high",
+            })
         if "headline" in system:
             return json.dumps({"headline": "LLM-GENERATED HEADLINE", "reasoning": "r",
                               "initial_hypothesis": "h", "confidence": "high"})
@@ -189,9 +284,12 @@ class SequentialRunnerTests(unittest.TestCase):
         self.assertIn("detection_analysis", final_state)
         self.assertIn("evidence_summary", final_state)
         self.assertIn("threat_intel", final_state)
-        self.assertEqual(len(final_state["trace"]), 3)
+        self.assertEqual(len(final_state["trace"]), 4)
         self.assertEqual([t["agent"] for t in final_state["trace"]],
-                         ["detection_analysis", "evidence_summary", "threat_intel"])
+                         ["detection_analysis", "evidence_summary", "threat_intel",
+                          "investigation"])
+        self.assertIn("timeline", final_state)
+        self.assertGreater(len(final_state["timeline"]), 0)
 
     def test_llm_tag_used_when_provider_returns_novel_json(self):
         incident, evidence = load_incident("brute_force.csv")
@@ -201,6 +299,8 @@ class SequentialRunnerTests(unittest.TestCase):
                                     "rag_result": rag_result, "trace": []})
         self.assertEqual(final_state["detection_analysis"]["headline"], "LLM-GENERATED HEADLINE")
         self.assertEqual(final_state["evidence_summary"]["narrative"], "LLM-GENERATED NARRATIVE")
+        self.assertEqual(final_state["investigation"]["attack_sequence_narrative"],
+                         "LLM-GENERATED SEQUENCE")
         self.assertTrue(all(t["generated_by"] == "llm" for t in final_state["trace"]))
 
 
@@ -248,7 +348,8 @@ class LangGraphFallbackTests(unittest.TestCase):
             {"incident": incident, "evidence": evidence, "rag_result": rag_result, "trace": []})
         lg_state = LangGraphRunner(MOCK).invoke(
             {"incident": incident, "evidence": evidence, "rag_result": rag_result, "trace": []})
-        for key in ("detection_analysis", "evidence_summary", "threat_intel"):
+        for key in ("detection_analysis", "evidence_summary", "threat_intel",
+                   "investigation", "timeline"):
             self.assertEqual(seq_state[key], lg_state[key])
 
 
@@ -271,9 +372,11 @@ class RunInvestigationIntegrationTests(unittest.TestCase):
                 self.assertEqual(result["incident_id"], incident["incident_id"])
                 self.assertEqual(result["llm_provider"], "mock")
                 self.assertEqual(result["graph_backend"], "sequential")
-                for key in ("detection_analysis", "evidence_summary", "threat_intel"):
+                for key in ("detection_analysis", "evidence_summary", "threat_intel",
+                           "investigation", "timeline"):
                     self.assertIsNotNone(result[key])
-                self.assertEqual(len(result["trace"]), 3)
+                self.assertEqual(len(result["trace"]), 4)
+                self.assertEqual(len(result["timeline"]), len(incident["detections"]))
 
     def test_defaults_to_configured_backend_with_graceful_langgraph_fallback(self):
         incident, evidence = load_incident("brute_force.csv")

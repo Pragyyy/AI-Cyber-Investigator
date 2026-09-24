@@ -55,3 +55,56 @@ def fallback_threat_intel(rag_result: dict) -> list[dict]:
             "evidence_ids": [e for e in t["matched_evidence"] if e.startswith("EV-")],
         })
     return results
+
+
+PRIORITY_FROM_SEVERITY = {"LOW": "low", "MEDIUM": "medium", "HIGH": "high", "CRITICAL": "critical"}
+
+
+def fallback_investigation(incident: dict, timeline: list[dict],
+                           threat_intel: dict) -> dict:
+    sequence_parts = []
+    for p in timeline:
+        gap_note = ""
+        if p["gap_before_seconds"] and p["gap_before_seconds"] >= 120:
+            minutes = round(p["gap_before_seconds"] / 60, 1)
+            gap_note = f" (after a gap of about {minutes} min with no observed activity)"
+        sequence_parts.append(f"{p['phase']}{gap_note}: {p['description']}")
+    attack_sequence_narrative = " Then, ".join(sequence_parts) or "No timeline phases were available."
+
+    who = ", ".join(f"'{u}'" for u in incident["usernames"]) or "an unidentified account"
+    where = ", ".join(incident["hostnames"]) or "an unidentified host"
+    affected_scope = f"Affected account(s): {who}. Affected host(s): {where}."
+
+    techniques = threat_intel.get("techniques", [])
+    confirmed = [t for t in techniques if t.get("verdict") == "supported"]
+    investigation_summary = (
+        f"{incident['title']} ({incident['severity']}) involving {who} on {where}, "
+        f"spanning {len(timeline)} correlated phase(s)."
+        + (f" Techniques with strong evidentiary support: "
+           f"{', '.join(t['technique_id'] for t in confirmed)}." if confirmed else "")
+    )
+
+    weak_or_potential = [t for t in techniques if t.get("verdict") in ("potential", "weak")]
+    uncertainty_parts = []
+    if weak_or_potential:
+        uncertainty_parts.append(
+            "Not fully confirmed: " +
+            ", ".join(f"{t['technique_id']} ({t['verdict']})" for t in weak_or_potential) + "."
+        )
+    notable = [p for p in timeline if p["gap_before_seconds"] and p["gap_before_seconds"] >= 120]
+    if notable:
+        uncertainty_parts.append(
+            f"There {'is' if len(notable) == 1 else 'are'} {len(notable)} unexplained "
+            f"timing gap(s) in the observed activity that may hide additional, "
+            f"unlogged attacker actions."
+        )
+    if not uncertainty_parts:
+        uncertainty_parts.append("No significant gaps or low-confidence mappings were identified.")
+
+    return {
+        "attack_sequence_narrative": attack_sequence_narrative,
+        "affected_scope": affected_scope,
+        "investigation_summary": investigation_summary,
+        "gaps_and_uncertainty": " ".join(uncertainty_parts),
+        "recommended_priority": PRIORITY_FROM_SEVERITY.get(incident["severity"], "medium"),
+    }

@@ -38,5 +38,7 @@ def run_investigation(incident: dict, evidence: dict, rag_result: dict,
         "detection_analysis": final_state.get("detection_analysis"),
         "evidence_summary": final_state.get("evidence_summary"),
         "threat_intel": final_state.get("threat_intel"),
+        "timeline": final_state.get("timeline"),
+        "investigation": final_state.get("investigation"),
         "trace": final_state.get("trace", []),
     }

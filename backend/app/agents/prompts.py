@@ -75,6 +75,31 @@ THREAT_INTEL_SYSTEM = (
 )
 
 
+INVESTIGATION_SYSTEM = (
+    "You are the Investigation/Correlation agent in a cybersecurity investigation "
+    "system - the main investigator, working last after the Detection, Evidence, and "
+    "Threat Intelligence agents. You receive their combined output plus a "
+    "deterministic timeline of attack phases (already correlated and ordered from the "
+    "evidence - you do not need to re-derive timing). Your job is to synthesize all of "
+    "this into a coherent final analysis: describe the likely attack sequence in "
+    "plain prose referencing the given phases, state which users/hosts were affected, "
+    "write an overall investigation summary, and - importantly - call out what is NOT "
+    "confirmed: rejected or low-confidence technique matches, unexplained gaps in the "
+    "timeline, or missing information a real analyst would still need to check. "
+    "Use ONLY the facts given to you (the phases, evidence, and validated techniques); "
+    "do not invent additional attacker actions, timestamps, or systems. "
+    "Respond with ONLY a JSON object, no other text, matching this shape: "
+    '{"attack_sequence_narrative": "prose describing the phases in order, e.g. '
+    '\'The attacker first ... then ... finally ...\'", '
+    '"affected_scope": "one sentence naming the affected users/hosts/systems", '
+    '"investigation_summary": "2-4 sentence overall analyst summary of the incident", '
+    '"gaps_and_uncertainty": "1-3 sentences on what is not confirmed or still unknown", '
+    '"recommended_priority": "low" | "medium" | "high" | "critical"}'
+    " Output ONLY the JSON - no preamble, no explanation, no reasoning or thinking "
+    "text before or after it, and no markdown code fences. Your entire response must "
+    "start with the opening bracket and end with the closing bracket."
+)
+
 
 def _compact(obj) -> str:
     return json.dumps(obj, indent=None, separators=(",", ":"))
@@ -130,3 +155,33 @@ def build_threat_intel_prompt(rag_result: dict, evidence: dict, detection_analys
     }
     return ("Context from earlier agents and candidate techniques retrieved for this "
            f"incident:\n{_compact(payload)}")
+
+
+def build_investigation_prompt(incident: dict, timeline: list[dict],
+                               detection_analysis: dict, evidence_summary: dict,
+                               threat_intel: dict) -> str:
+    techniques = threat_intel.get("techniques", [])
+    payload = {
+        "incident": {"title": incident["title"], "severity": incident["severity"],
+                    "usernames": incident["usernames"], "hostnames": incident["hostnames"],
+                    "source_ips": incident["source_ips"]},
+        "detection_agent_hypothesis": detection_analysis.get("initial_hypothesis", ""),
+        "detection_agent_confidence": detection_analysis.get("confidence", ""),
+        "evidence_agent_narrative": evidence_summary.get("narrative", ""),
+        "timeline_phases": [
+            {"step": p["step"], "phase": p["phase"], "first_seen": p["first_seen"],
+             "last_seen": p["last_seen"], "description": p["description"],
+             "gap_before_seconds": p["gap_before_seconds"]}
+            for p in timeline
+        ],
+        "validated_techniques_supported_or_potential": [
+            {"technique_id": t["technique_id"], "technique_name": t["technique_name"],
+             "verdict": t["verdict"], "justification": t["justification"]}
+            for t in techniques if t.get("verdict") in ("supported", "potential")
+        ],
+        "rejected_or_weak_candidates": [
+            {"technique_id": t["technique_id"], "technique_name": t["technique_name"]}
+            for t in techniques if t.get("verdict") == "weak"
+        ],
+    }
+    return f"Combined agent output and timeline for this incident:\n{_compact(payload)}"

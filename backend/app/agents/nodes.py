@@ -9,10 +9,12 @@ import json
 
 from ..llm import LLMProvider, parse_json_response
 from . import fallback, prompts
+from .timeline import build_timeline
 
 DETECTION_MAX_TOKENS = 600
 EVIDENCE_MAX_TOKENS = 900
 THREAT_INTEL_MAX_TOKENS = 2000
+INVESTIGATION_MAX_TOKENS = 900
 
 
 def _run_json_step(provider: LLMProvider, system: str, user: str, fallback_value,
@@ -98,4 +100,27 @@ def node_threat_intel(state: dict, provider: LLMProvider) -> dict:
         "threat_intel": {"techniques": result},
         "trace": state.get("trace", []) +
                 [_trace_entry("threat_intel", generated_by, debug_note)],
+    }
+
+
+def node_investigation(state: dict, provider: LLMProvider) -> dict:
+    incident = state["incident"]
+    threat_intel = state["threat_intel"]
+    timeline = build_timeline(incident, threat_intel)
+
+    system = prompts.INVESTIGATION_SYSTEM
+    user = prompts.build_investigation_prompt(
+        incident, timeline, state["detection_analysis"], state["evidence_summary"],
+        threat_intel,
+    )
+    result, generated_by, debug_note = _run_json_step(
+        provider, system, user,
+        fallback.fallback_investigation(incident, timeline, threat_intel),
+        INVESTIGATION_MAX_TOKENS,
+    )
+    return {
+        "timeline": timeline,
+        "investigation": result,
+        "trace": state.get("trace", []) +
+                [_trace_entry("investigation", generated_by, debug_note)],
     }

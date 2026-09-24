@@ -21,6 +21,10 @@ class AgentState(TypedDict, total=False):
     # Agent 3 - Threat Intelligence
     threat_intel: dict
 
+    # Agent 4 - Investigation/Correlation
+    timeline: list
+    investigation: dict
+
     # Bookkeeping
     trace: list  # [{"agent": ..., "generated_by": "llm"|"fallback", "note": ...}, ...]
     errors: list

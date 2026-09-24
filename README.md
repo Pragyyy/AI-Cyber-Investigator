@@ -5,7 +5,7 @@ A software-only prototype that takes security logs, detects suspicious activity,
 knowledge with RAG (MITRE ATT&CK and security documents), builds an attack timeline,
 and generates an evidence-based incident report.
 
-> **Status: Phase 5 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, multi-agent investigation).
+> **Status: Phase 6 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, full multi-agent investigation with timeline).
 
 > **Safety note:** all data in this repo is simulated. The tool is for defensive
 > analysis. Public IPs come from reserved documentation ranges and the "encoded"
@@ -18,7 +18,7 @@ and generates an evidence-based incident report.
 - [x] Phase 3 - Evidence extraction (traceable to original log rows)
 - [x] Phase 4 - RAG knowledge base (MITRE ATT&CK + guidelines) with ChromaDB
 - [x] Phase 5 - Multi-agent workflow (LangGraph): Detection/Analysis, Evidence, Threat Intelligence agents
-- [ ] Phase 6 - Investigation and correlation
+- [x] Phase 6 - Investigation/Correlation agent: attack timeline, sequence narrative, gaps and uncertainty
 - [ ] Phase 7 - Report generation (PDF)
 - [ ] Phase 8 - React dashboard
 - [ ] Phase 9 - Integration
@@ -200,6 +200,44 @@ and [OpenRouter](https://openrouter.ai). Set `LLM_BASE_URL` accordingly, e.g.
 runs the identical node logic without needing the package installed - this is what the
 automated test suite uses, and it's why the agent logic itself is fully tested even in
 environments without `langgraph`.
+
+## Investigation and correlation (Phase 6)
+
+A fourth agent - **Investigation/Correlation**, the "main investigator" from the
+project brief's architecture diagram - now runs last in the chain, after Detection,
+Evidence, and Threat Intelligence. It receives all three earlier agents' output plus a
+**deterministic timeline** built in pure Python (`app/agents/timeline.py`, no LLM
+involved) before it ever calls a model:
+
+- **One phase per detection** (each detection is already a time-bounded, grouped
+  cluster of related events from the rule engine), ordered by time.
+- **Phase labels prefer a validated MITRE tactic** from the Threat Intelligence agent's
+  output where one covers that phase's evidence (e.g. "Command and Control" from a
+  supported T1071.001 match), falling back to a generic rule-based label otherwise.
+- **Gaps between phases are computed and flagged** when notable (>= 2 minutes with no
+  observed activity) - these are exactly the kind of silence a real analyst would want
+  called out, since they may hide unlogged attacker actions.
+
+The agent's LLM step then synthesizes all of this into:
+- `attack_sequence_narrative` - prose describing the phases in order
+- `affected_scope` - which accounts/hosts were involved
+- `investigation_summary` - a short overall analyst summary
+- `gaps_and_uncertainty` - explicitly surfaces rejected/low-confidence technique
+  matches and unexplained timing gaps, rather than presenting a falsely tidy picture
+- `recommended_priority`
+
+Like the other three agents, it degrades to a deterministic, fact-only fallback (same
+`"generated_by": "llm"` / `"fallback"` / `"fallback_parse_error"` tagging) if no LLM is
+configured or a call fails - and a `debug_note` is attached to the trace entry on a
+parse failure, showing a preview of the raw response and the exact parse error, so a
+bad response from a reasoning model's verbose "thinking" output (a real issue hit
+during development with an open-weights model on Groq) is diagnosable instead of a
+silent mystery.
+
+This completes the multi-agent pipeline end to end: `/investigate` now returns
+`detection_analysis`, `evidence_summary`, `threat_intel`, `timeline`, and
+`investigation` together - everything Phase 7's PDF report will need, with nothing left
+to compute at report-generation time beyond formatting.
 
 ## Sample datasets (`data/sample_logs/`)
 

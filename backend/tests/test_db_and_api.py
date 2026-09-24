@@ -218,7 +218,9 @@ class ApiTests(unittest.TestCase):
         self.assertIsNotNone(body["detection_analysis"])
         self.assertIsNotNone(body["evidence_summary"])
         self.assertIsNotNone(body["threat_intel"])
-        self.assertEqual(len(body["trace"]), 3)
+        self.assertIsNotNone(body["investigation"])
+        self.assertIsNotNone(body["timeline"])
+        self.assertEqual(len(body["trace"]), 4)
 
         cached = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/investigation")
         self.assertEqual(cached.json(), body)

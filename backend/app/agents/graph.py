@@ -1,4 +1,5 @@
-"""Builds and runs the agent graph: Detection -> Evidence -> Threat Intelligence.
+"""Builds and runs the agent graph: Detection -> Evidence -> Threat Intelligence ->
+Investigation/Correlation.
 
 Two interchangeable runners, both exposing `.invoke(initial_state) -> final_state`:
 
@@ -9,18 +10,18 @@ Two interchangeable runners, both exposing `.invoke(initial_state) -> final_stat
   (so the agent logic itself is fully tested without needing the langgraph package).
 
 Node order matters here beyond just style: node_threat_intel reads
-state["detection_analysis"] and state["evidence_summary"], so it genuinely depends on
-the other two agents having already run - this is real agent-to-agent handoff via
-shared state, not three independent calls run in sequence for show.
+state["detection_analysis"] and state["evidence_summary"], and node_investigation reads
+all three earlier agents' output - this is real agent-to-agent handoff via shared
+state, not four independent calls run in sequence for show.
 """
 from __future__ import annotations
 
 from ..llm import LLMProvider
-from .nodes import node_detection, node_evidence, node_threat_intel
+from .nodes import node_detection, node_evidence, node_investigation, node_threat_intel
 from .state import AgentState
 
 NODE_ORDER = [("detection", node_detection), ("evidence", node_evidence),
-             ("threat_intel", node_threat_intel)]
+             ("threat_intel", node_threat_intel), ("investigation", node_investigation)]
 
 
 class SequentialRunner:
