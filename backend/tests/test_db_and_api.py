@@ -231,6 +231,33 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(
             self.client.post(f"/api/uploads/{uid}/incidents/INC-999/investigate").status_code, 404)
 
+    def test_report_endpoints(self):
+        data = (SAMPLES / "attack_chain.csv").read_bytes()
+        up = self.client.post("/api/uploads", files={"file": ("ac.csv", data)}).json()
+        uid = up["upload_id"]
+        iid = self.client.get(f"/api/uploads/{uid}/incidents").json()[0]["incident_id"]
+
+        # report/data before /investigate has run -> 409, not a crash
+        r = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/report/data")
+        self.assertEqual(r.status_code, 409)
+
+        self.client.post(f"/api/uploads/{uid}/incidents/{iid}/investigate")
+
+        r = self.client.get(f"/api/uploads/{uid}/incidents/{iid}/report/data")
+        self.assertEqual(r.status_code, 200)
+        report_data = r.json()
+        self.assertEqual(report_data["incident_id"], iid)
+        self.assertGreater(len(report_data["recommended_actions"]), 0)
+
+        r = self.client.post(f"/api/uploads/{uid}/incidents/{iid}/report")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["content-type"], "application/pdf")
+        self.assertGreater(len(r.content), 1000)
+        self.assertTrue(r.content.startswith(b"%PDF"))
+
+        self.assertEqual(
+            self.client.post(f"/api/uploads/{uid}/incidents/INC-999/report").status_code, 404)
+
     def test_rag_reindex(self):
         r = self.client.post("/api/rag/reindex")
         self.assertEqual(r.status_code, 200)

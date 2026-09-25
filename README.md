@@ -5,7 +5,7 @@ A software-only prototype that takes security logs, detects suspicious activity,
 knowledge with RAG (MITRE ATT&CK and security documents), builds an attack timeline,
 and generates an evidence-based incident report.
 
-> **Status: Phase 6 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, full multi-agent investigation with timeline).
+> **Status: Phase 7 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, full multi-agent investigation with timeline, PDF report generation).
 
 > **Safety note:** all data in this repo is simulated. The tool is for defensive
 > analysis. Public IPs come from reserved documentation ranges and the "encoded"
@@ -19,7 +19,7 @@ and generates an evidence-based incident report.
 - [x] Phase 4 - RAG knowledge base (MITRE ATT&CK + guidelines) with ChromaDB
 - [x] Phase 5 - Multi-agent workflow (LangGraph): Detection/Analysis, Evidence, Threat Intelligence agents
 - [x] Phase 6 - Investigation/Correlation agent: attack timeline, sequence narrative, gaps and uncertainty
-- [ ] Phase 7 - Report generation (PDF)
+- [x] Phase 7 - Report generation (PDF)
 - [ ] Phase 8 - React dashboard
 - [ ] Phase 9 - Integration
 - [ ] Phase 10 - Testing across all scenarios
@@ -239,6 +239,42 @@ This completes the multi-agent pipeline end to end: `/investigate` now returns
 `investigation` together - everything Phase 7's PDF report will need, with nothing left
 to compute at report-generation time beyond formatting.
 
+## Report generation (Phase 7)
+
+Two endpoints turn a completed investigation into a report:
+
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/api/uploads/{id}/incidents/{incident_id}/report/data` | The normalized report data as JSON (for a future dashboard report view) |
+| POST | `/api/uploads/{id}/incidents/{incident_id}/report` | Generates and downloads the PDF report |
+
+Both require `/investigate` to have already been run for that incident (409 if not) -
+report generation deliberately never triggers a fresh LLM run as a side effect of a
+download click; it reports on an investigation that already happened.
+
+**`app/report/builder.py`** assembles the normalized report structure purely by
+organizing what Phases 2-6 already computed - no new analysis happens here. The one
+new piece is **Recommended Actions** (`app/report/actions.py`): a fixed, reviewed
+lookup table of 2-4 concrete actions per detection rule, deduplicated across the
+incident's rules and always closed with two universal actions (preserve logs, document
+findings). This is deliberately **not** LLM-generated - recommended actions are
+operational guidance with real consequences if wrong, so, like detection and evidence,
+they come from a reviewed table rather than a model's improvisation.
+
+**`app/report/pdf.py`** renders the PDF with reportlab: a summary table, the incident
+timeline, evidence with indicators of compromise, the MITRE ATT&CK mapping (color-coded
+by verdict), the AI investigation narrative, RAG sources actually retrieved, and
+recommended actions - matching the project brief's report format section by section.
+
+A real bug worth knowing about if you extend this: reportlab's `Paragraph` markup
+parser treats `&`, `<`, and `>` as the start of XML markup. Since report content
+includes LLM-generated text (which can absolutely contain any of those), every piece of
+dynamic text is passed through an `_esc()` helper before reaching a `Paragraph` - this
+was caught by actually rendering a PDF and reading the text back out with `pypdf` during
+development (a heading literally read "MITRE ATT&CK; Mapping" before the fix), and is
+covered by a regression test plus a deliberate stress test with `<script>` tags and
+stray `&`/`<`/`>` characters.
+
 ## Sample datasets (`data/sample_logs/`)
 
 | File | Scenario |
@@ -260,12 +296,14 @@ backend/app/detection/  Rules, correlation, thresholds
 backend/app/evidence/   Evidence extraction, indicators, related events
 backend/app/rag/        Chunking, embeddings, vector store, retrieval pipeline
 backend/app/llm/        Pluggable LLM provider (mock, Anthropic, OpenAI-compatible)
-backend/app/agents/     Multi-agent graph: state, prompts, fallback, nodes, LangGraph/sequential runner
+backend/app/agents/     Multi-agent graph: state, prompts, fallback, nodes, timeline, LangGraph/sequential runner
+backend/app/report/     Report data builder, recommended actions, PDF rendering
 data/knowledge_base/    MITRE ATT&CK subset + guideline docs (RAG source content)
 backend/tests/   Unit tests
 data/sample_logs Simulated datasets + manifest
 scripts/         Sample data generator, RAG index builder
 docs/            Design notes and screenshots (later)
+reports/         Generated PDF reports (gitignored)
 ```
 
 ## Limitations and future work

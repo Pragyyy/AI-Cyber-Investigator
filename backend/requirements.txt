@@ -26,3 +26,7 @@ chromadb>=0.5
 langgraph>=0.2         # recommended orchestration; falls back to a built-in sequential
                        # runner automatically if not installed (AGENT_GRAPH_BACKEND=sequential)
 requests>=2.31         # used for direct HTTP calls to the LLM provider (no vendor SDK needed)
+
+# Phase 7 - PDF report generation.
+reportlab>=4.0
+pypdf>=5.0          # used by the test suite to verify generated PDFs, not by the app itself

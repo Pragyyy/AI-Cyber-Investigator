@@ -10,15 +10,16 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from . import db
-from .config import settings
+from .config import ROOT, settings
 from .detection import DetectionConfig, run_detection
 from .evidence import build_evidence
 from . import rag as rag_module
 from .rag import rag_config
 from .agents import run_investigation
+from .report import build_report_data, render_pdf
 from .parser import SUPPORTED_EXTENSIONS, LogParseError, parse_log_file
 
 
@@ -322,3 +323,41 @@ def get_investigation(upload_id: str, incident_id: str):
         raise HTTPException(status_code=404, detail="No investigation has been run for "
                             "this incident yet. POST to /investigate first.")
     return result
+
+
+# --------------------------------------------------------------------------
+# Report generation (Phase 7)
+# --------------------------------------------------------------------------
+REPORTS_DIR = ROOT / "reports"
+
+
+@app.get("/api/uploads/{upload_id}/incidents/{incident_id}/report/data")
+def get_report_data(upload_id: str, incident_id: str):
+    """The normalized report data (everything the PDF is built from) as JSON - useful
+    for a dashboard "report" view that doesn't need the PDF file itself. Requires
+    /investigate to have been run first."""
+    _require_upload(upload_id)
+    incident = db.get_incident(upload_id, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found.")
+    investigation_result = db.get_investigation(upload_id, incident_id)
+    if not investigation_result:
+        raise HTTPException(status_code=409, detail="No investigation has been run for "
+                            "this incident yet. POST to /investigate first.")
+    evidence = db.get_evidence(upload_id, incident_id) or build_evidence(
+        incident, db.get_all_events(upload_id))
+    rag_result = db.get_threat_intel(upload_id, incident_id)
+    return build_report_data(incident, evidence, investigation_result, rag_result)
+
+
+@app.post("/api/uploads/{upload_id}/incidents/{incident_id}/report")
+def generate_report(upload_id: str, incident_id: str):
+    """Generate the PDF incident report and return it as a file download. Requires
+    /investigate to have been run first (run it automatically is deliberately NOT done
+    here - report generation should reflect a deliberate, already-reviewed
+    investigation, not trigger a fresh LLM run as a side effect of a download click)."""
+    report_data = get_report_data(upload_id, incident_id)  # reuses all the same checks
+    output_path = REPORTS_DIR / upload_id / f"{incident_id}_report.pdf"
+    render_pdf(report_data, str(output_path))
+    return FileResponse(output_path, media_type="application/pdf",
+                        filename=f"{incident_id}_report.pdf")
