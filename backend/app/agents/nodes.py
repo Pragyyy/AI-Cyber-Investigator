@@ -6,15 +6,28 @@ SequentialRunner expect (see graph.py).
 from __future__ import annotations
 
 import json
+import time
 
 from ..llm import LLMProvider, parse_json_response
+from ..llm.config import llm_config
 from . import fallback, prompts
 from .timeline import build_timeline
 
-DETECTION_MAX_TOKENS = 600
-EVIDENCE_MAX_TOKENS = 900
-THREAT_INTEL_MAX_TOKENS = 2000
-INVESTIGATION_MAX_TOKENS = 900
+DETECTION_MAX_TOKENS = 1000
+EVIDENCE_MAX_TOKENS = 1400
+THREAT_INTEL_MAX_TOKENS = 2800
+INVESTIGATION_MAX_TOKENS = 2500
+
+
+def _throttle(provider: LLMProvider) -> None:
+    """Sleep LLM_REQUEST_DELAY_SECONDS before a real provider call, to stay under
+    free-tier per-minute rate limits (Groq et al. enforce tight ones - see
+    llm/providers.py's retry-on-429 for the reactive half of handling this). Skipped
+    entirely for the mock provider, so local development and the test suite - which
+    calls these nodes dozens of times - stay fast regardless of this setting.
+    """
+    if provider.name != "mock" and llm_config.request_delay_seconds > 0:
+        time.sleep(llm_config.request_delay_seconds)
 
 
 def _run_json_step(provider: LLMProvider, system: str, user: str, fallback_value,
@@ -51,6 +64,7 @@ def _trace_entry(agent: str, generated_by: str, debug_note: str | None = None) -
 
 def node_detection(state: dict, provider: LLMProvider) -> dict:
     incident = state["incident"]
+    _throttle(provider)
     system, user = prompts.DETECTION_SYSTEM, prompts.build_detection_prompt(incident)
     result, generated_by, debug_note = _run_json_step(
         provider, system, user, fallback.fallback_detection_analysis(incident),
@@ -65,6 +79,7 @@ def node_detection(state: dict, provider: LLMProvider) -> dict:
 
 def node_evidence(state: dict, provider: LLMProvider) -> dict:
     evidence = state["evidence"]
+    _throttle(provider)
     system, user = prompts.EVIDENCE_SYSTEM, prompts.build_evidence_prompt(evidence)
     result, generated_by, debug_note = _run_json_step(
         provider, system, user, fallback.fallback_evidence_summary(evidence),
@@ -92,6 +107,7 @@ def node_threat_intel(state: dict, provider: LLMProvider) -> dict:
             detection_analysis=state["detection_analysis"],
             evidence_summary=state["evidence_summary"],
         )
+        _throttle(provider)
         result, generated_by, debug_note = _run_json_step(
             provider, system, user, fallback.fallback_threat_intel(rag_result),
             THREAT_INTEL_MAX_TOKENS,
@@ -113,6 +129,7 @@ def node_investigation(state: dict, provider: LLMProvider) -> dict:
         incident, timeline, state["detection_analysis"], state["evidence_summary"],
         threat_intel,
     )
+    _throttle(provider)
     result, generated_by, debug_note = _run_json_step(
         provider, system, user,
         fallback.fallback_investigation(incident, timeline, threat_intel),

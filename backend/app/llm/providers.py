@@ -11,8 +11,11 @@ working provider and API key are configured.
 from __future__ import annotations
 
 import json
+import time
 
 import requests
+
+from .config import llm_config
 
 MOCK_TAG = "[MOCK]"
 
@@ -47,19 +50,52 @@ class MockProvider(LLMProvider):
 
 
 class _RemoteProvider(LLMProvider):
-    """Shared retry-to-fallback behavior for any provider that makes a real HTTP call."""
+    """Shared retry-to-fallback behavior for any provider that makes a real HTTP call.
+
+    A 429 (rate limited) response is retried with exponential backoff, honoring a
+    Retry-After header if the provider sends one - this matters in practice: free-tier
+    providers (Groq et al.) enforce tight per-minute token limits, and a burst of
+    agent calls can trip them even with spacing between requests. Any other failure
+    (bad key, network error, malformed response, retries exhausted) falls through to
+    the caller-supplied fallback exactly as before.
+    """
 
     def complete(self, system: str, user: str, *, max_tokens: int = 1024,
                 temperature: float = 0.2, mock_response=None) -> str:
-        try:
-            return self._call(system, user, max_tokens, temperature)
-        except Exception as exc:  # noqa: BLE001 - any failure degrades to fallback
-            if mock_response is not None:
-                return self._resolve_mock(mock_response)
-            raise LLMError(f"{self.name} call failed and no fallback was provided: {exc}") from exc
+        attempt = 0
+        while True:
+            try:
+                return self._call(system, user, max_tokens, temperature)
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if status == 429 and attempt < llm_config.max_retries:
+                    wait = _retry_wait_seconds(exc.response, attempt, llm_config.retry_backoff_seconds)
+                    time.sleep(wait)
+                    attempt += 1
+                    continue
+                return self._fallback_or_raise(exc, mock_response)
+            except Exception as exc:  # noqa: BLE001 - any other failure degrades to fallback
+                return self._fallback_or_raise(exc, mock_response)
+
+    def _fallback_or_raise(self, exc: Exception, mock_response) -> str:
+        if mock_response is not None:
+            return self._resolve_mock(mock_response)
+        raise LLMError(f"{self.name} call failed and no fallback was provided: {exc}") from exc
 
     def _call(self, system: str, user: str, max_tokens: int, temperature: float) -> str:
         raise NotImplementedError
+
+
+def _retry_wait_seconds(response, attempt: int, backoff_base: float) -> float:
+    """Prefer the server's own Retry-After header (Groq and most OpenAI-compatible
+    APIs send one on 429s); fall back to exponential backoff if it's absent."""
+    retry_after = response.headers.get("Retry-After") if response is not None else None
+    if retry_after:
+        try:
+            return max(float(retry_after), 0.0)
+        except ValueError:
+            pass
+    return backoff_base * (2 ** attempt)
 
 
 class AnthropicProvider(_RemoteProvider):

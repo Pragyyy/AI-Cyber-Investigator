@@ -5,7 +5,7 @@ A software-only prototype that takes security logs, detects suspicious activity,
 knowledge with RAG (MITRE ATT&CK and security documents), builds an attack timeline,
 and generates an evidence-based incident report.
 
-> **Status: Phase 7 of 10 complete** (backend, log parsing, sample data, detection engine, evidence extraction, RAG knowledge base, full multi-agent investigation with timeline, PDF report generation).
+> **Status: Phase 9 of 10 complete** (all of Phases 1-8, plus rate-limit hardening and a full integration pass).
 
 > **Safety note:** all data in this repo is simulated. The tool is for defensive
 > analysis. Public IPs come from reserved documentation ranges and the "encoded"
@@ -20,8 +20,8 @@ and generates an evidence-based incident report.
 - [x] Phase 5 - Multi-agent workflow (LangGraph): Detection/Analysis, Evidence, Threat Intelligence agents
 - [x] Phase 6 - Investigation/Correlation agent: attack timeline, sequence narrative, gaps and uncertainty
 - [x] Phase 7 - Report generation (PDF)
-- [ ] Phase 8 - React dashboard
-- [ ] Phase 9 - Integration
+- [x] Phase 8 - React dashboard
+- [x] Phase 9 - Integration: rate-limit hardening, dataset deletion, RAG preflight check, end-to-end walkthrough
 - [ ] Phase 10 - Testing across all scenarios
 
 ## Requirements
@@ -50,6 +50,21 @@ uvicorn app.main:app --reload
 Open http://127.0.0.1:8000/docs to try the API in your browser.
 
 Run the tests (from `backend/`): `pytest` (or `python -m unittest discover -s tests -t .`).
+
+### Frontend (Phase 8)
+
+In a second terminal, with the backend still running:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The backend's default CORS settings already allow this
+origin (see `CORS_ORIGINS` in `.env.example`), so no extra configuration is needed for
+local development. `npm install` will generate a `package-lock.json` - commit it, so
+anyone who clones the repo gets the exact same dependency versions you tested with.
 
 ## API
 
@@ -275,6 +290,96 @@ development (a heading literally read "MITRE ATT&CK; Mapping" before the fix), a
 covered by a regression test plus a deliberate stress test with `<script>` tags and
 stray `&`/`<`/`>` characters.
 
+## React dashboard (Phase 8)
+
+A two-page dashboard (Vite + React + React Router), talking to the backend entirely
+through the real endpoints built in Phases 1-7 - every button performs the actual
+action it describes, per the project brief's requirement that this not be a UI mockup:
+
+- **Landing** (`/`) - upload a CSV/JSON log file, or load one of the bundled sample
+  datasets. Both actually call `POST /api/uploads` or `POST /api/samples/{name}/load`.
+- **Dashboard** (`/uploads/:uploadId`) - the four headline stat cards, a severity
+  distribution chart (Recharts), and the incident table, all from
+  `GET /api/uploads/{id}/stats` and `.../incidents`. Clicking a row navigates to detail.
+- **Incident Detail** (`/uploads/:uploadId/incidents/:incidentId`) - incident header,
+  evidence and indicators of compromise (shown immediately - these don't need an LLM),
+  an **Investigate** button that calls `POST .../investigate` and then renders the full
+  multi-agent output (timeline, attack sequence, MITRE ATT&CK mapping, RAG sources,
+  recommended actions), and a **Generate Report** button that downloads the actual PDF
+  from Phase 7. A small badge next to each agent's output shows whether it came from a
+  real LLM call or the deterministic fallback (`generated_by`), surfacing the
+  pipeline's own transparency tagging directly in the UI.
+
+The Incident Detail page's on-screen "investigated" view is built from
+`GET .../report/data` (Phase 7's normalized report structure) rather than re-deriving
+timeline/MITRE/evidence formatting client-side - one source of truth for both the PDF
+and the on-screen view.
+
+### A note on how this phase was verified
+
+Every backend phase (1-7) was verified by actually running the code and its test
+suite. This environment has no network access for `npm install`, so that same
+verification wasn't possible here: I could not install React/Vite/Recharts or run the
+dev server. What I *could* do, and did: used `esbuild` (bundled with a pre-installed
+tool in this container) to syntax-check every file individually, then did a full bundle
+build resolving all local cross-file imports (catching import-path typos and
+export/import mismatches) while treating npm packages as external - both passed clean.
+That check also caught one real bug during development: `useEffect(load, [dep])`
+passed a function that implicitly returns a Promise from a `.then()` chain, which
+React logs a dev-mode warning about; fixed to `useEffect(() => { load(); }, [dep])` in
+both places it occurred.
+
+That's meaningfully more scrutiny than "written but never checked" - but it is **not**
+the same as actually running it in a browser and clicking through the upload -> 
+investigate -> report flow. Please run `npm install && npm run dev`, click through that
+flow, and report back anything that looks wrong (a blank section, a console error, a
+button that doesn't do what its label says) - this is the one phase where that report
+is genuinely the first real-world test.
+
+## Integration pass (Phase 9)
+
+With every piece built (Phases 1-8), this phase closed the gaps between them rather
+than adding new capability:
+
+**Rate-limit hardening.** Real use with a free-tier provider (Groq) surfaced 429s
+under a burst of 4 agent calls per incident. Two independent fixes, both opt-in via
+`.env` and both no-ops for the default mock provider (so local dev and the test suite
+stay fast):
+- `LLM_REQUEST_DELAY_SECONDS` - a proactive pause between agent calls.
+- `LLM_MAX_RETRIES` / `LLM_RETRY_BACKOFF_SECONDS` - a reactive retry-with-backoff on a
+  429 specifically (honoring the provider's own `Retry-After` header when it sends
+  one), so a burst that slips past the delay still recovers instead of falling back.
+
+**Frontend/backend wiring audit.** Every function in `frontend/src/api.js` was checked
+against the actual FastAPI routes - all matched. Two functions existed but weren't
+called from any component yet (dead code, not a bug): `deleteUpload` is now wired into
+the dataset switcher (a ✕ button per entry, with a confirm step); `getRagStatus` now
+drives a preflight warning on the Landing page if the knowledge base index hasn't been
+built yet, rather than letting someone discover that as a confusing 409 several clicks
+into Investigate. `getEvents` (raw paginated event browsing) remains unused - the
+backend endpoint exists and works, but no UI was built for it; that's a real scope gap,
+not a wiring bug, and would be a reasonable place to extend the dashboard next.
+
+### End-to-end walkthrough
+
+This is the project brief's own demonstration flow (Section 16), mapped to what to
+actually click:
+
+1. Start the backend (`uvicorn app.main:app --reload`) and frontend (`npm run dev`).
+2. Open http://localhost:5173 - the **Landing** page.
+3. Load `attack_chain.csv` from the sample dropdown (or upload your own CSV/JSON).
+4. You land on the **Dashboard**: stat cards, severity chart, and one CRITICAL
+   incident already detected - purely rule-based, no LLM involved yet.
+5. Click the incident row to open **Incident Detail**. Evidence and indicators of
+   compromise are already visible.
+6. Click **Investigate**. This runs the real 4-agent LangGraph chain (Detection ->
+   Evidence -> Threat Intelligence -> Investigation/Correlation).
+7. The page now shows the executive summary, timeline, MITRE ATT&CK mapping, RAG
+   sources, and recommended actions - each agent's output tagged `● LLM` or
+   `○ Deterministic fallback`.
+8. Click **Generate Report (PDF)** - downloads the real PDF built in Phase 7.
+9. Use **Switch dataset** in the header to move between uploads, or the ✕ to delete one.
+
 ## Sample datasets (`data/sample_logs/`)
 
 | File | Scenario |
@@ -304,10 +409,16 @@ data/sample_logs Simulated datasets + manifest
 scripts/         Sample data generator, RAG index builder
 docs/            Design notes and screenshots (later)
 reports/         Generated PDF reports (gitignored)
+frontend/src/            App.jsx, main.jsx, api.js, index.css
+frontend/src/components/ Reusable UI: Header, tables, badges, timeline, charts, panels
+frontend/src/pages/      Landing, Dashboard, IncidentDetail
 ```
 
 ## Limitations and future work
 
+- No UI for browsing raw events directly (the backend's paginated/filtered events
+  endpoint works and is used internally, but the dashboard only surfaces events
+  through incidents and evidence, not a standalone event browser).
 - CSV/JSON authentication and process logs only; other log types are designed for but
   not yet built.
 - Detection rules are tuned on simulated data; a real deployment would need threshold
@@ -322,6 +433,7 @@ reports/         Generated PDF reports (gitignored)
   not a guarantee.
 - No live threat-intelligence lookups (IP/hash reputation) - only the local knowledge
   base.
+- The React dashboard (Phase 8) could not be installed or run in the development environment (no network access for npm); it was syntax- and bundle-checked with esbuild but not executed in a real browser before being handed off.
 - LLM-generated wording will vary between runs (and between providers/models) even when
   the underlying evidence and detections are identical. Everything the wording is based
   on - the detections, evidence, and candidate techniques - is deterministic; only the
