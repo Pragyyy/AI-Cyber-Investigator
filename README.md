@@ -5,7 +5,7 @@ A software-only prototype that takes security logs, detects suspicious activity,
 knowledge with RAG (MITRE ATT&CK and security documents), builds an attack timeline,
 and generates an evidence-based incident report.
 
-> **Status: Phase 9 of 10 complete** (all of Phases 1-8, plus rate-limit hardening and a full integration pass).
+> **Status: All 10 phases complete.** Software-only AI cybersecurity investigation platform: log ingestion, rule-based detection, evidence extraction, RAG over MITRE ATT&CK, a 4-agent LangGraph investigation pipeline, PDF reporting, a React dashboard, and a randomized evaluation of the detection engine (see `docs/EVALUATION.md`).
 
 > **Safety note:** all data in this repo is simulated. The tool is for defensive
 > analysis. Public IPs come from reserved documentation ranges and the "encoded"
@@ -22,7 +22,7 @@ and generates an evidence-based incident report.
 - [x] Phase 7 - Report generation (PDF)
 - [x] Phase 8 - React dashboard
 - [x] Phase 9 - Integration: rate-limit hardening, dataset deletion, RAG preflight check, end-to-end walkthrough
-- [ ] Phase 10 - Testing across all scenarios
+- [x] Phase 10 - Testing: randomized detection evaluation, performance benchmarks (see `docs/EVALUATION.md`)
 
 ## Requirements
 
@@ -379,6 +379,38 @@ actually click:
    `○ Deterministic fallback`.
 8. Click **Generate Report (PDF)** - downloads the real PDF built in Phase 7.
 9. Use **Switch dataset** in the header to move between uploads, or the ✕ to delete one.
+
+## Testing at scale (Phase 10)
+
+The five bundled sample scenarios (below) are fixed templates - passing them proves the
+engine handles those specific inputs, not that it generalizes. Phase 10 adds a
+randomized evaluation that generates many varied instances of each attack, embedded in
+realistic background activity (including deliberately tricky legitimate admin activity
+that looks similar to early attack stages), and scores the real parser + detection code
+against known ground truth:
+
+```
+python scripts/evaluate_detection.py                    # full report, printed
+python scripts/evaluate_detection.py --markdown docs/EVALUATION.md   # regenerate the doc
+python scripts/evaluate_detection.py --seed 7 --per-attack 200       # larger run
+```
+
+Deterministic for a given `--seed`. A small-N version of the same evaluation runs as
+part of the normal test suite (`backend/tests/test_evaluation.py`) as a regression
+guard - it does not assert "false positives should be near zero" (that would assert
+something false about the current engine), it pins today's measured behavior as a
+baseline so a large unexplained swing gets caught in review.
+
+**Read `docs/EVALUATION.md` for the full results**, including two findings worth
+knowing before presenting this project: attack detection is 100% across all four
+scenario types at 150 randomized instances each (one single-instance classification
+labeling nuance is traced and explained in detail), but roughly a third of completely
+ordinary days produce one false positive from the `UNUSUAL_LOGIN` rule - and the report
+explains precisely why (remote/hybrid worker logins look statistically "rare" within a
+single day of data) and lays out concrete tuning options without unilaterally changing
+detection behavior. It also documents known evasion cases (low-and-slow brute force,
+distributed brute force, beaconing over a standard port) as honest, named limitations
+rather than hiding them, and includes performance benchmarks up to 100,000 events.
 
 ## Sample datasets (`data/sample_logs/`)
 
